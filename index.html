@@ -6,6 +6,14 @@
   <title>Universal Video Downloader | Free Online Media Downloader</title>
   <meta name="description" content="Download videos and audio from YouTube, TikTok, Instagram, Twitter/X, Facebook, and more without ads or watermarks.">
   
+  <!-- PWA Manifest & Mobile Meta Tags -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StreamFetch">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/727/727245.png">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -84,8 +92,10 @@
       <span class="text-xl font-bold tracking-tight">StreamFetch</span>
     </div>
     <div class="flex items-center space-x-3">
+      <button id="pwaInstallBtn" onclick="installPWA()" class="hidden text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors px-3 py-2 rounded-xl shadow-md">
+        <i class="fa-solid fa-mobile-screen-button mr-1.5"></i> Install App
+      </button>
       <a href="#how-it-works" class="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors px-3 py-2 rounded-lg">Guide</a>
-      <a href="#github-deploy" class="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors px-3 py-2 rounded-lg">GitHub Host</a>
       <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-200/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors" title="Toggle Light/Dark Theme">
         <i class="fa-solid fa-moon text-sm hidden dark:block"></i>
         <i class="fa-solid fa-sun text-sm block dark:hidden"></i>
@@ -174,7 +184,6 @@
         <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-pink-100 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400"><i class="fa-brands fa-instagram mr-1.5"></i> Instagram</span>
         <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-sky-100 dark:bg-sky-950/40 text-sky-500 dark:text-sky-400"><i class="fa-brands fa-x-twitter mr-1.5"></i> Twitter / X</span>
         <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"><i class="fa-brands fa-facebook mr-1.5"></i> Facebook</span>
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400"><i class="fa-brands fa-pinterest mr-1.5"></i> Pinterest</span>
       </div>
     </div>
 
@@ -207,7 +216,6 @@
               <span id="resBadge" class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
                 Ready
               </span>
-              <span id="resDuration" class="text-xs text-slate-500 dark:text-slate-400"></span>
             </div>
 
             <h3 id="resTitle" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white line-clamp-2 mb-4">
@@ -259,14 +267,14 @@
           <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
             <i class="fa-brands fa-github"></i>
           </div>
-          <h2 class="text-lg font-bold">Host on GitHub Pages</h2>
+          <h2 class="text-lg font-bold">File Setup Guide</h2>
         </div>
-        <ol class="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 list-decimal list-inside">
-          <li>Create a new repository on GitHub (e.g. <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">video-downloader</code>).</li>
-          <li>Upload this file as <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">index.html</code> to the root.</li>
-          <li>Go to <strong>Settings &gt; Pages</strong> in your GitHub repository.</li>
-          <li>Select <strong>Branch: main / root</strong> and click <strong>Save</strong>.</li>
-        </ol>
+        <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mb-2">Upload these files to your GitHub Repository root:</p>
+        <ul class="space-y-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 list-disc list-inside">
+          1. <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">index.html</code> (Main App)
+          <br>
+          2. <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">manifest.json</code> (App Manifest)
+        </ul>
       </div>
 
     </div>
@@ -274,21 +282,54 @@
   </main>
 
   <footer class="w-full max-w-6xl mx-auto px-4 py-6 text-center text-xs text-slate-500 dark:text-slate-400 z-10 border-t border-slate-200/50 dark:border-slate-800/50 mt-12">
-    <p>StreamFetch Web Downloader &bull; Hosted on GitHub Pages &bull; Free & Open Tool</p>
+    <p>StreamFetch Web Downloader &bull; Progressive Web App &bull; Hosted on GitHub Pages</p>
   </footer>
 
   <script>
     // State variables
     let currentMode = 'video';
     let generatedDownloadUrl = '';
+    let deferredPrompt;
 
-    // Initialize Theme
+    // Theme Management
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       document.documentElement.classList.add('dark');
     }
 
     function toggleTheme() {
       document.documentElement.classList.toggle('dark');
+    }
+
+    // PWA Install Prompt Listener
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const pwaBtn = document.getElementById('pwaInstallBtn');
+      if (pwaBtn) pwaBtn.classList.remove('hidden');
+    });
+
+    async function installPWA() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('pwaInstallBtn').classList.add('hidden');
+      }
+      deferredPrompt = null;
+    }
+
+    // Register simple inline Service Worker for PWA compliance
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swBlob = new Blob([`
+          self.addEventListener('install', e => self.skipWaiting());
+          self.addEventListener('activate', e => self.clients.claim());
+          self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+        `], { type: 'text/javascript' });
+        
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob))
+          .catch(err => console.log('SW registration skipped:', err));
+      });
     }
 
     // Input handlers
@@ -321,7 +362,6 @@
       }
     }
 
-    // Toggle Format Mode (Video/Audio)
     function setMode(mode) {
       currentMode = mode;
       const btnVideo = document.getElementById('modeVideo');
@@ -339,7 +379,6 @@
       }
     }
 
-    // Main Download Controller
     async function handleDownloadProcess() {
       const url = inputField.value.trim();
       if (!url) {
@@ -353,7 +392,6 @@
       const quality = document.getElementById('qualitySelect').value;
 
       try {
-        // Primary Attempt: Cobalt API Endpoint
         const data = await fetchFromCobaltAPI(url, currentMode, quality);
         
         if (data && (data.url || data.picker)) {
@@ -364,12 +402,10 @@
             mode: currentMode
           });
         } else {
-          // Fallback Attempt
           await fetchFromFallbackAPI(url);
         }
       } catch (err) {
         console.error('API Fetch Exception:', err);
-        // Secondary Fallback Handler
         try {
           await fetchFromFallbackAPI(url);
         } catch (fallbackErr) {
@@ -380,7 +416,6 @@
       }
     }
 
-    // Fetch from Cobalt API
     async function fetchFromCobaltAPI(url, mode, quality) {
       const payload = {
         url: url,
@@ -405,9 +440,7 @@
       return await response.json();
     }
 
-    // Secondary Fallback API Helper
     async function fetchFromFallbackAPI(url) {
-      // Rapid / Public TikWM API fallback for TikTok URLs
       if (url.includes('tiktok.com')) {
         const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
         const json = await res.json();
@@ -425,7 +458,6 @@
       throw new Error('Fallback endpoints exhausted.');
     }
 
-    // Render Results Card
     function displayResult(item) {
       generatedDownloadUrl = item.url;
 
@@ -441,11 +473,9 @@
       document.getElementById('resultCard').classList.remove('hidden');
       document.getElementById('errorBox').classList.add('hidden');
 
-      // Scroll smoothly to result
       document.getElementById('outputContainer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    // Error Box Handler
     function showError(title, message) {
       document.getElementById('errorTitle').innerText = title;
       document.getElementById('errorMessage').innerText = message;
@@ -479,7 +509,6 @@
       }
     }
 
-    // Utility Helpers
     function copyDownloadLink() {
       if (!generatedDownloadUrl) return;
       
@@ -508,3 +537,4 @@
     }
   </script>
 </body>
+</html>
